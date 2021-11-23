@@ -23,8 +23,13 @@ Spring Security를 통해 로컬 로그인과 소셜 로그인을 구현하였�
 1. DB Member 엔티티에서 RefreshToken을 저장하던 것을 삭제하고 Redis에 저장하는 것으로 변경
 2. DB EmailAuth 엔티티에서 이메일 인증코드를 저장하던 것을 삭제하고 Redis에 저장하는 것으로 변경
 
+해당 부분에 대한 자세한 부분은 아래 블로그 포스트에 설명해두었습니다.
 
+​                 
 
+#### Redis를 활용한 SpringSecurityJWT-Local-OAuth2-EmailAuth 구현
 
+[[Spring\] JWT, OAuth2.0, Email - Redis로 구현 (tistory.com)](https://gilssang97.tistory.com/61)
 
 ​         
+

@@ -2,8 +2,6 @@ package project.SangHyun.domain.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,17 +12,14 @@ import project.SangHyun.domain.auth.Profile.ProfileDto;
 import project.SangHyun.domain.dto.MemberLoginResponseDto;
 import project.SangHyun.domain.dto.MemberRegisterResponseDto;
 import project.SangHyun.domain.dto.TokenResponseDto;
-import project.SangHyun.domain.entity.EmailAuth;
 import project.SangHyun.domain.entity.Member;
 import project.SangHyun.domain.rediskey.RedisKey;
-import project.SangHyun.domain.repository.EmailAuthRepository;
 import project.SangHyun.domain.repository.MemberRepository;
 import project.SangHyun.web.dto.EmailAuthRequestDto;
 import project.SangHyun.web.dto.MemberLoginRequestDto;
 import project.SangHyun.web.dto.MemberRegisterRequestDto;
 import project.SangHyun.web.dto.ReIssueRequestDto;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,7 +33,6 @@ public class SignService {
     private final PasswordEncoder passwordEncoder;
 
     private final MemberRepository memberRepository;
-    private final EmailAuthRepository emailAuthRepository;
 
     private final RedisService redisService;
     private final ProviderService providerService;
@@ -106,7 +100,7 @@ public class SignService {
             throw new EmailNotAuthenticatedException();
 
         String refreshToken = jwtTokenProvider.createRefreshToken();
-        redisService.setDataWithExpiration(RedisKey.REGISTER.getKey()+member.getEmail(), refreshToken, JwtTokenProvider.REFRESH_TOKEN_VALID_TIME);
+        redisService.setDataWithExpiration(RedisKey.REFRESH.getKey()+member.getEmail(), refreshToken, JwtTokenProvider.REFRESH_TOKEN_VALID_TIME);
         return new MemberLoginResponseDto(member.getId(), jwtTokenProvider.createToken(requestDto.getEmail()), refreshToken);
     }
 
@@ -121,7 +115,7 @@ public class SignService {
         AccessToken accessToken = providerService.getAccessToken(code, provider);
         ProfileDto profile = providerService.getProfile(accessToken.getAccess_token(), provider);
         String refreshToken = jwtTokenProvider.createRefreshToken();
-        redisService.setDataWithExpiration(RedisKey.REGISTER.getKey()+refreshToken, refreshToken, JwtTokenProvider.REFRESH_TOKEN_VALID_TIME);
+        redisService.setDataWithExpiration(RedisKey.REFRESH.getKey()+refreshToken, refreshToken, JwtTokenProvider.REFRESH_TOKEN_VALID_TIME);
 
         Optional<Member> findMember = memberRepository.findByEmailAndProvider(profile.getEmail(), provider);
         if (findMember.isPresent()) {
@@ -150,14 +144,14 @@ public class SignService {
      */
     @Transactional
     public TokenResponseDto reIssue(ReIssueRequestDto requestDto) {
-        String findRefreshToken = redisService.getData(RedisKey.REGISTER.getKey()+requestDto.getEmail());
+        String findRefreshToken = redisService.getData(RedisKey.REFRESH.getKey()+requestDto.getEmail());
         if (findRefreshToken == null || !findRefreshToken.equals(requestDto.getRefreshToken()))
             throw new InvalidRefreshTokenException();
 
         Member member = memberRepository.findByEmail(requestDto.getEmail()).orElseThrow(MemberNotFoundException::new);
         String accessToken = jwtTokenProvider.createToken(member.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken();
-        redisService.setDataWithExpiration(RedisKey.REGISTER.getKey()+member.getEmail(), refreshToken, JwtTokenProvider.REFRESH_TOKEN_VALID_TIME);
+        redisService.setDataWithExpiration(RedisKey.REFRESH.getKey()+member.getEmail(), refreshToken, JwtTokenProvider.REFRESH_TOKEN_VALID_TIME);
 
         return new TokenResponseDto(accessToken, refreshToken);
     }
